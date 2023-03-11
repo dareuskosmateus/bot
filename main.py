@@ -6,10 +6,10 @@ from discord.ext import commands
 
 load_dotenv(r"C:\Users\daro\PycharmProjects\bot\token.env")
 token = os.getenv('TOKEN')
-channel = 1083108054486224896
-ip = ('127.0.0.1', 6464)
-encoding = 'ascii'
-password = 'password'
+channel = int(os.getenv('CHANNEL'))
+ip = (os.getenv('IP'), int(os.getenv('PORT')))
+encoding = os.getenv('ENCODING')
+password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
 
 class CustomClient(discord.ext.commands.Bot):
@@ -26,7 +26,6 @@ class CustomClient(discord.ext.commands.Bot):
         return
 
     async def on_ready(self):
-        pass
         return
 
     async def on_message(self, message):
@@ -38,13 +37,23 @@ class CustomClient(discord.ext.commands.Bot):
         return
 
     async def send_listen(self, message):
-        msg = str("{}:{}:{}".format(message.created_at.time().hour, message.created_at.time().minute, message.created_at.time().second)) +\
-              ' ' + str(message.author) + ': ' + str(message.content)
-        self.soc.sendto(HEADER + bytes('rcon {} say {}'.format(password, msg), encoding), ip)
-        return
+        try:
+            msg = str("{}:{}:{}".format(message.created_at.time().hour, message.created_at.time().minute, message.created_at.time().second)) +\
+                  ' ' + str(message.author) + ': ' + str(message.content)
+            self.soc.sendto(HEADER + bytes('rcon {} say {}'.format(password, msg), encoding), ip)
+        except ConnectionRefusedError:
+            message.channel.send("Connection refused " + str(socket.error))
+        except ConnectionAbortedError:
+            message.channel.send("Connection aborted " + str(socket.error))
+        except ConnectionResetError:
+            message.channel.send("Connection reset " + str(socket.error))
+        except ConnectionError:
+            message.channel.send("XD")
 
-    async def command(self, ctx):
-        pass
+        return
+    async def command(self, ctx, *args):
+        await ctx.send(args.join())
+
 
 bot = CustomClient(intents=discord.Intents.all(), command_prefix='$')
 bot.run(token)
