@@ -49,10 +49,7 @@ class CustomClient(discord.ext.commands.Bot):
             message.channel.send("Connection reset " + str(socket.error))
         except ConnectionError:
             message.channel.send("XD")
-
         return
-    async def command(self, ctx, *args):
-        await ctx.send(args.join())
 
 
 bot = CustomClient(intents=discord.Intents.all(), command_prefix='$')
