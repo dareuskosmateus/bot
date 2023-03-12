@@ -1,8 +1,12 @@
 import socket
 import os
 import discord
+import asyncio
+import ffmpeg
 from dotenv import load_dotenv
 from discord.ext import commands
+from youtube_dl import YoutubeDL
+from youtubecog import YoutubeCog
 
 load_dotenv(r"C:\Users\daro\PycharmProjects\bot\token.env")
 token = os.getenv('TOKEN')
@@ -11,6 +15,7 @@ ip = (os.getenv('IP'), int(os.getenv('PORT')))
 encoding = os.getenv('ENCODING')
 password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
+
 
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -34,12 +39,17 @@ class CustomClient(discord.ext.commands.Bot):
         else:
             if message.channel.id == channel:
                 await self.send_listen(message)
+        await self.process_commands(message)
         return
 
     async def send_listen(self, message):
         try:
-            msg = str("{}:{}:{}".format(message.created_at.time().hour, message.created_at.time().minute, message.created_at.time().second)) +\
+            msg = str("{}:{}:{}".format(
+                message.created_at.time().hour,
+                message.created_at.time().minute,
+                message.created_at.time().second)) + \
                   ' ' + str(message.author) + ': ' + str(message.content)
+
             self.soc.sendto(HEADER + bytes('rcon {} say {}'.format(password, msg), encoding), ip)
         except ConnectionRefusedError:
             message.channel.send("Connection refused " + str(socket.error))
@@ -51,6 +61,10 @@ class CustomClient(discord.ext.commands.Bot):
             message.channel.send("XD")
         return
 
+async def setup(bot):
+    await bot.add_cog(YoutubeCog(bot))
+
 
 bot = CustomClient(intents=discord.Intents.all(), command_prefix='$')
+asyncio.run(setup(bot))
 bot.run(token)
