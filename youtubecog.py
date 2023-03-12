@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
-
+test = 0
 yt_dlp.utils.bug_reports_message = lambda: ''
 
 ytdl_format_options = {

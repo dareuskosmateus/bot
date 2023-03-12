@@ -15,7 +15,8 @@ ip = (os.getenv('IP'), int(os.getenv('PORT')))
 encoding = os.getenv('ENCODING')
 password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
-
+def lol():
+    pass
 
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
