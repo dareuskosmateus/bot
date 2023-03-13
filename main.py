@@ -14,10 +14,6 @@ encoding = os.getenv('ENCODING')
 password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
 
-class Client():
-    def __init__(self, socket):
-        self.socket = socket
-
 
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
