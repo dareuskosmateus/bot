@@ -50,6 +50,9 @@ class YoutubeCog(discord.ext.commands.Cog):
 
     @commands.command(help='Makes the bot play music over a voice channel. This command will invoke joinchannel command if not in voice channel already.')
     async def play(self, ctx, url):
+        if not ctx.message.author.voice:
+            await self.join(ctx)
+
         server = ctx.message.guild
         voice_channel = server.voice_client
         async with ctx.typing():
