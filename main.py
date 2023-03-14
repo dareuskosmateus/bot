@@ -2,6 +2,7 @@ import os
 import discord
 import asyncio
 import asyncudp
+import re
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from youtubecog import YoutubeCog
@@ -47,10 +48,10 @@ class CustomClient(discord.ext.commands.Bot):
             try:
                 data = await self.socket.recvfrom()
                 if data:
-                    channel = self.get_channel(channelid)
-                    data = data[0][4:]
-                    data = data.decode('utf-8')
-                    await channel.send(data)
+                    formatted = await self.formatter(data)
+                    if formatted:
+                        channel = self.get_channel(channelid)
+                        await channel.send(formatted)
             except:
                 pass
             await asyncio.sleep(1)
@@ -66,12 +67,24 @@ class CustomClient(discord.ext.commands.Bot):
             pass
         except:
             pass
-    @tasks.loop(seconds=30)
-    async def pinger(self):
-        self.socket.sendto(PINGPACKET)
-        return
+    #@tasks.loop(seconds=30)
+    #async def pinger(self):
+    #    self.socket.sendto(PINGPACKET)
+    #    return
 
-    async def formatter(self):
+    async def formatter(self, data):
+        data = data[0]
+        if data.startswith(HEADER):
+            data = data[4:]
+        if data.startswith(b'n'):
+            data = data[1:]
+            if data.startswith(b'\x01^7'):
+                data = data[3:]
+                data = data.decode('utf-8')
+                data = re.sub("(\^x...)", '', data)
+                data = re.sub("(\^7)", '', data)
+                return data
+                pass
         pass
 
 
