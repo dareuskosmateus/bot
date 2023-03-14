@@ -2,10 +2,10 @@ import os
 import discord
 import asyncio
 import asyncudp
+from xrcon.client import XRcon
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from youtubecog import YoutubeCog
-
 load_dotenv(r"C:\Users\daro\PycharmProjects\bot\token.env")
 token = os.getenv('TOKEN')
 channelid = int(os.getenv('CHANNEL'))
@@ -13,7 +13,8 @@ ip = (os.getenv('IP'), int(os.getenv('PORT')))
 encoding = os.getenv('ENCODING')
 password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
-
+PINGPACKET = HEADER + bytes("ping", encoding)
+PINGRESPONSE = HEADER + bytes("ack", encoding)
 
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -22,7 +23,14 @@ class CustomClient(discord.ext.commands.Bot):
 
     async def on_ready(self):
         self.socket = await asyncudp.create_socket(remote_addr=ip)
+        selfaddress = self.socket.getsockname()
+        self.socket.sendto(HEADER + bytes('rcon {} log_dest_udp {}:{}'.format(password, selfaddress[0], selfaddress[1]), encoding))
         self.listener.start()
+        self.pinger.start()
+        return
+
+    async def createnewsocket(self):
+        self.socket = await asyncudp.create_socket(remote_addr=ip)
         return
 
     async def on_message(self, message):
@@ -41,7 +49,7 @@ class CustomClient(discord.ext.commands.Bot):
                 data = await self.socket.recvfrom()
                 if data:
                     channel = self.get_channel(channelid)
-                    data = data[0][5:]
+                    data = data[0][4:]
                     data = data.decode('utf-8')
                     await channel.send(data)
             except:
@@ -59,10 +67,16 @@ class CustomClient(discord.ext.commands.Bot):
             pass
         except:
             pass
+    @tasks.loop(seconds=30)
+    async def pinger(self):
+        self.socket.sendto(PINGPACKET)
+        return
+
+    async def formatter(self):
+        pass
+
 
 async def setup(bot):
-    global socket
-    socket = await asyncudp.create_socket(remote_addr=ip)
     await bot.add_cog(YoutubeCog(bot))
 
 bot = CustomClient(intents=discord.Intents.all(), command_prefix='$')
