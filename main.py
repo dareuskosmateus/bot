@@ -26,7 +26,7 @@ class CustomClient(discord.ext.commands.Bot):
         selfaddress = self.socket.getsockname()
         self.socket.sendto(HEADER + bytes('rcon {} log_dest_udp {}:{}'.format(password, selfaddress[0], selfaddress[1]), encoding))
         self.listener.start()
-        self.pinger.start()
+        #self.pinger.start()
         return
 
     async def createnewsocket(self):
@@ -78,7 +78,7 @@ class CustomClient(discord.ext.commands.Bot):
             data = data[4:]
         if data.startswith(b'n'):
             data = data[1:]
-            if data.startswith(b'\x01^7'):
+            if data.startswith(b'\x01'):
                 data = data[3:]
                 data = data.decode('utf-8')
                 data = re.sub("(\^x...)", '', data)
