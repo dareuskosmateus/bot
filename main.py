@@ -2,7 +2,6 @@ import os
 import discord
 import asyncio
 import asyncudp
-from xrcon.client import XRcon
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from youtubecog import YoutubeCog
