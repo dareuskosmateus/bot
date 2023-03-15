@@ -81,9 +81,12 @@ class CustomClient(discord.ext.commands.Bot):
             if data.startswith(b'\x01'):
                 data = data[3:]
                 data = data.decode('utf-8')
-                data = re.sub("(\^x...)", '', data)
-                data = re.sub("(\^7)", '', data)
-                return data
+                data = re.split('\^7:', data)
+                nickname, message = data[0], data[1]
+                nickname = re.sub("(\^x...)", '', nickname)
+                nickname = re.sub("(\^[0-9])", '', nickname)
+                string = "> " + nickname + ": " + message #discord formatting
+                return string
                 pass
         pass
 
