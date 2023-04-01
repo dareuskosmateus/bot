@@ -46,19 +46,50 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class YoutubeCog(discord.ext.commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.queuedict = {}
         pass
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for guild in self.bot.guilds:
+            self.queuedict[guild.id] = []
+        return
+
+
     @commands.command(help='Makes the bot play music over a voice channel. This command will invoke joinchannel command if not in voice channel already.')
-    async def play(self, ctx, url):
+    async def play(self, ctx, url=None):
         if not ctx.message.author.voice:
             await self.join(ctx)
+
+        if url:
+            self.queuedict[ctx.message.guild.id].insert(0, url)
 
         server = ctx.message.guild
         voice_channel = server.voice_client
         async with ctx.typing():
-            filename = await YTDLSource.from_url(url, loop=self.bot.loop)
-            voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=filename))  # have to have ffmpeg added to system PATH
-        await ctx.send('**Now playing:** {}'.format(filename))
+            filename = await YTDLSource.from_url(self.queuedict[ctx.message.guild.id][0], loop=self.bot.loop)
+            self.queuedict[ctx.message.guild.id].pop(0)
+            voice_channel.play(discord.FFmpegPCMAudio(executable="ffmpeg.exe", source=filename))# have to have ffmpeg added to system PATH
+            await ctx.send('**Now playing:** {}'.format(filename))
+            await self.playloop(ctx, ctx.message.guild, voice_channel)
+
+
+    @commands.command(help='')
+    async def queue(self, ctx, url):
+        if url:
+            self.queuedict[ctx.message.guild.id].append(url)
+        else:
+            ctx.message.send("No url specified")
+        return
+
+    async def playloop(self, ctx, guild, voice):
+        while self.queuedict[guild.id]:
+            if voice.is_playing():
+                await asyncio.sleep(5)
+            else:
+                await self.play(ctx)
+        return
+
     @play.error
     async def playerror(self, ctx, error):
         if isinstance(error, discord.ext.commands.MissingRequiredArgument):

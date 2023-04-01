@@ -19,6 +19,7 @@ PINGRESPONSE = HEADER + bytes("ack", encoding)
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.channel = self.get_channel(channelid)
         return
 
     async def on_ready(self):
@@ -26,7 +27,7 @@ class CustomClient(discord.ext.commands.Bot):
         selfaddress = self.socket.getsockname()
         self.socket.sendto(HEADER + bytes('rcon {} log_dest_udp {}:{}'.format(password, selfaddress[0], selfaddress[1]), encoding))
         self.listener.start()
-        #self.pinger.start()
+        self.pinger.start()
         return
 
     async def createnewsocket(self):
@@ -50,8 +51,7 @@ class CustomClient(discord.ext.commands.Bot):
                 if data:
                     formatted = await self.formatter(data)
                     if formatted:
-                        channel = self.get_channel(channelid)
-                        await channel.send(formatted)
+                        await self.channel.send(formatted)
             except:
                 pass
             await asyncio.sleep(1)
@@ -67,10 +67,17 @@ class CustomClient(discord.ext.commands.Bot):
             pass
         except:
             pass
-    #@tasks.loop(seconds=30)
-    #async def pinger(self):
-    #    self.socket.sendto(PINGPACKET)
-    #    return
+
+    @tasks.loop(seconds=30)
+    async def pinger(self):
+       self.socket.sendto(PINGPACKET)
+       data = await self.socket.recvfrom()
+       await asyncio.sleep(0.5)
+       if data:
+           return
+       else:
+           await self.channel.send("Lost connection to the server")
+       return
 
     async def formatter(self, data):
         data = data[0]
