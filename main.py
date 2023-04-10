@@ -19,10 +19,10 @@ PINGRESPONSE = HEADER + bytes("ack", encoding)
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.channel = self.get_channel(channelid)
         return
 
     async def on_ready(self):
+        self.channel = self.get_channel(1083108054486224896)
         self.socket = await asyncudp.create_socket(remote_addr=ip)
         selfaddress = self.socket.getsockname()
         self.socket.sendto(HEADER + bytes('rcon {} log_dest_udp {}:{}'.format(password, selfaddress[0], selfaddress[1]), encoding))
@@ -52,17 +52,17 @@ class CustomClient(discord.ext.commands.Bot):
                     formatted = await self.formatter(data)
                     if formatted:
                         await self.channel.send(formatted)
-            except:
-                pass
+            except Exception as e:
+                print(repr(e))
             await asyncio.sleep(1)
 
     async def sender(self, message):
         try:
             msg = str("{}:{}:{}".format(
-                message.created_at.time().hour,
-                message.created_at.time().minute,
-                message.created_at.time().second)) + \
-                  ' ' + str(message.author) + ': ' + str(message.content)
+                str('0' + str(message.created_at.time().hour))[-2:],
+                str('0' + str(message.created_at.time().minute))[-2:],
+                str('0' + str(message.created_at.time().second))[-2:] + \
+                  ' ' + str(message.author) + ': ' + str(message.content)))
             self.socket.sendto(HEADER + bytes('rcon {} say {}'.format(password, msg), encoding))
             pass
         except:
