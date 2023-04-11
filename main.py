@@ -3,6 +3,8 @@ import discord
 import asyncio
 import asyncudp
 import re
+import xrcon
+
 from dotenv import load_dotenv
 from discord.ext import commands, tasks
 from youtubecog import YoutubeCog
@@ -15,6 +17,25 @@ password = os.getenv('PASSWORD')
 HEADER = (b'\xFF' * 4)
 PINGPACKET = HEADER + bytes("ping", encoding)
 PINGRESPONSE = HEADER + bytes("ack", encoding)
+
+delimiters = {
+    'globalchat' : b'\x01',
+    'teamchat' : b'\x03',
+
+}
+
+colors = {
+    '^0' : 'gray',
+    '^1' : 'red',
+    '^2' : 0,
+    '^3' : 'yellow',
+    '^4' : 'blue',
+    '^5' : 0,
+    '^6' : 0,
+    '^7' : 'white',
+    '^8' : 0,
+    '^9' : 0,
+}
 
 class CustomClient(discord.ext.commands.Bot):
     def __init__(self, *args, **kwargs):
@@ -51,7 +72,8 @@ class CustomClient(discord.ext.commands.Bot):
                 if data:
                     formatted = await self.formatter(data)
                     if formatted:
-                        await self.channel.send(formatted)
+                        for line in formatted:
+                            await self.channel.send(line)
             except Exception as e:
                 print(repr(e))
             await asyncio.sleep(1)
@@ -68,16 +90,16 @@ class CustomClient(discord.ext.commands.Bot):
         except:
             pass
 
-    @tasks.loop(seconds=30)
-    async def pinger(self):
-       self.socket.sendto(PINGPACKET)
-       data = await self.socket.recvfrom()
-       await asyncio.sleep(0.5)
-       if data:
-           return
-       else:
-           await self.channel.send("Lost connection to the server")
-       return
+#    @tasks.loop(seconds=30)
+#    async def pinger(self):
+#       self.socket.sendto(PINGPACKET)
+#       data = await self.socket.recvfrom()
+#       await asyncio.sleep(0.5)
+#       if data:
+#           return
+#       else:
+#           await self.channel.send("Lost connection to the server")
+#       return
 
     async def formatter(self, data):
         data = data[0]
@@ -85,16 +107,23 @@ class CustomClient(discord.ext.commands.Bot):
             data = data[4:]
         if data.startswith(b'n'):
             data = data[1:]
-            if data.startswith(b'\x01'):
-                data = data[3:]
-                data = data.decode('utf-8')
-                data = re.split('\^7:', data)
-                nickname, message = data[0], data[1]
-                nickname = re.sub("(\^x...)", '', nickname)
-                nickname = re.sub("(\^[0-9])", '', nickname)
-                string = "> " + nickname + ": " + message #discord formatting
-                return string
-                pass
+        data = data.split(b'\n')
+
+        for x in range(0, len(data)):
+            if data[x].startswith(b'\x01'):
+                data[x] = data[x][1:]
+                if data[x].startswith(b'\r'):
+                    data[x] = b''
+                else:
+                    data[x] = data[x].decode(encoding)
+                    data[x] = re.sub('(\^[0-9])', '', data[x])
+                    data[x] = '> ' + data[x]
+
+        for x in list(data):
+            if type(x) == type(b''):
+                data.remove(x)
+
+        return data
         pass
 
 
